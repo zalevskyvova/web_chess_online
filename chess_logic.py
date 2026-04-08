@@ -1,5 +1,6 @@
-from http.client import responses
 
+import random
+import string
 import chess
 import requests
 
@@ -35,6 +36,8 @@ def get_best_move(board):
         return moves.split()[0]
     except requests.exceptions.RequestException:
         return None
-
-
-get_best_move(board)
+def get_random_string(length):
+        # Choose characters from: lowercase, uppercase, and digits
+        characters = string.ascii_letters + string.digits
+        # Select 'length' characters and join them into a string
+        return ''.join(random.choices(characters, k=length)).upper()
