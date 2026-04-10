@@ -41,3 +41,6 @@ def get_random_string(length):
         characters = string.ascii_letters + string.digits
         # Select 'length' characters and join them into a string
         return ''.join(random.choices(characters, k=length)).upper()
+def get_move_history(board):
+    start = chess.Board()
+    return start.variation_san(board.move_stack)

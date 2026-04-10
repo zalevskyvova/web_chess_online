@@ -1,8 +1,8 @@
-import chess
+import chess, time
 from fastapi import FastAPI
 from pydantic import BaseModel
 import chess_logic
-from chess_logic import make_move, which_side_move, game_status, get_best_move, get_random_string
+from chess_logic import make_move, which_side_move, game_status, get_best_move, get_random_string, get_move_history
 import random
 import string
 from fastapi_utils.tasks import repeat_every
@@ -19,6 +19,7 @@ TIME_CONTROLS = {
     "10+0": (600, 0),
     "15+10": (900, 0),
     "30+0": (1800, 0),
+    "unlim": (float('inf'), 0)
 }
 
 class Chess(BaseModel):
@@ -43,6 +44,7 @@ async def move(data: Chess):
         success = make_move(board, data.move)
         status = game_status(board)
         turn = which_side_move(board)
+        move_history = get_move_history(board)
         increment = rooms_dict[data.room_id]['increment']
         if turn == "White":
 
@@ -55,23 +57,29 @@ async def move(data: Chess):
         if success and status == "playing":
             bot_move = get_best_move(board)
             make_move(board, bot_move)
+            rooms_dict[data.room_id]['last_move_time'] = time.time()
             status = game_status(board)
             turn = which_side_move(board)
+            move_history = get_move_history(board)
             return {'success': bot_move,
                 'status': status,
                 'turn': turn,
                 'w_timer':rooms_dict[data.room_id]['w_timer'],
-                'b_timer':rooms_dict[data.room_id]['b_timer']}
+                'b_timer':rooms_dict[data.room_id]['b_timer'],
+                'move_history': move_history}
         return {'success': success,
                 'status': status,
                 'turn': turn,
                 'w_timer': rooms_dict[data.room_id]['w_timer'],
-                'b_timer': rooms_dict[data.room_id]['b_timer']}
+                'b_timer': rooms_dict[data.room_id]['b_timer'],
+                'move_history': move_history}
 
     else:
         success = make_move(board, data.move)
+        rooms_dict[data.room_id]['last_move_time'] = time.time()
         status = game_status(board)
         turn = which_side_move(board)
+        move_history = get_move_history(board)
         increment = rooms_dict[data.room_id]['increment']
         if turn == "White":
 
@@ -83,19 +91,21 @@ async def move(data: Chess):
                 'status': status,
                 'turn' : turn,
                 'w_timer':rooms_dict[data.room_id]['w_timer'],
-                'b_timer':rooms_dict[data.room_id]['b_timer']}
+                'b_timer':rooms_dict[data.room_id]['b_timer'],
+                'move_history': move_history}
 
 
 @app.post("/create-room")
 async def create_room(data: Room):
-    time, increment = TIME_CONTROLS[data.time_control]
+    game_time, increment = TIME_CONTROLS[data.time_control]
     room_id = get_random_string(6)
     rooms_dict[room_id] = {
         'board': chess.Board(),
         'timer': data.time_control,
-        'w_timer': time,
-        'b_timer': time,
-        'increment': increment
+        'w_timer': game_time,
+        'b_timer': game_time,
+        'increment': increment,
+        'last_move_time': time.time()
     }
     return room_id
 @app.post("/join-room")
@@ -108,6 +118,7 @@ async def join_room(data: Room):
 @app.on_event('startup')
 @repeat_every(seconds=1)
 def timer_decreasing():
+        to_delete = []
         for room_id in rooms_dict:
             board = rooms_dict[room_id]['board']
             if board.move_stack != []:
@@ -115,6 +126,10 @@ def timer_decreasing():
                 if game_status(board) == "playing":
                     if turn == "White":
                         rooms_dict[room_id]['w_timer'] -= 1
+
                     else:
                         rooms_dict[room_id]['b_timer'] -= 1
-
+                if time.time() - rooms_dict[room_id]['last_move_time'] > 300:
+                    to_delete.append(room_id)
+        for room_id in to_delete:
+                    del rooms_dict[room_id]
