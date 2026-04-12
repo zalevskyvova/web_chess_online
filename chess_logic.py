@@ -6,6 +6,13 @@ import requests
 
 board = chess.Board()
 
+DIFFICULTY = {
+    "easy": 3,
+    "medium": 8,
+    "hard": 12,
+    "unbeatable": 20
+}
+
 def make_move(board, move_uci):
     move = chess.Move.from_uci(move_uci)
     if move in board.legal_moves:
@@ -28,10 +35,10 @@ def which_side_move(board):
         return "White"
     else:
         return "Black"
-def get_best_move(board):
+def get_bot_move(board,depth):
     try:
         current_fen = board.fen()
-        response = requests.get(f"https://lichess.org/api/cloud-eval?fen={current_fen}")
+        response = requests.get(f"https://lichess.org/api/cloud-eval?fen={current_fen}&depth={depth}")
         moves = response.json()['pvs'][0]['moves']
         return moves.split()[0]
     except requests.exceptions.RequestException:
