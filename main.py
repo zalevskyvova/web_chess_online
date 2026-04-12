@@ -2,10 +2,11 @@ import chess, time
 from fastapi import FastAPI
 from pydantic import BaseModel
 import chess_logic
-from chess_logic import make_move, which_side_move, game_status, get_best_move, get_random_string, get_move_history
+from chess_logic import make_move, which_side_move, game_status, get_bot_move, get_random_string, get_move_history
 import random
 import string
 from fastapi_utils.tasks import repeat_every
+import asyncio
 
 app = FastAPI()
 rooms_dict = {}
@@ -21,6 +22,12 @@ TIME_CONTROLS = {
     "30+0": (1800, 0),
     "unlim": (float('inf'), 0)
 }
+DIFFICULTY = {
+    "easy": 3,
+    "medium": 8,
+    "hard": 12,
+    "unbeatable": 20
+}
 
 class Chess(BaseModel):
     move: str
@@ -31,6 +38,7 @@ class Chess(BaseModel):
 class Room(BaseModel):
     room_id: str
     time_control: str
+    difficulty: str
 
 @app.post("/move")
 async def move(data: Chess):
@@ -55,7 +63,9 @@ async def move(data: Chess):
 
 
         if success and status == "playing":
-            bot_move = get_best_move(board)
+            depth = DIFFICULTY[rooms_dict[data.room_id]['difficulty']]
+            await asyncio.sleep(5)
+            bot_move = get_bot_move(board, depth)
             make_move(board, bot_move)
             rooms_dict[data.room_id]['last_move_time'] = time.time()
             status = game_status(board)
@@ -105,7 +115,8 @@ async def create_room(data: Room):
         'w_timer': game_time,
         'b_timer': game_time,
         'increment': increment,
-        'last_move_time': time.time()
+        'last_move_time': time.time(),
+        'difficulty': data.difficulty
     }
     return room_id
 @app.post("/join-room")
