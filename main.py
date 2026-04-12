@@ -1,6 +1,6 @@
 import chess, time
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel,field_validator
 import chess_logic
 from chess_logic import make_move, which_side_move, game_status, get_bot_move, get_random_string, get_move_history
 import random
@@ -39,6 +39,20 @@ class Chess(BaseModel):
 class CreateRoom(BaseModel):
     time_control: str
     difficulty: str
+
+    @field_validator('time_control')
+    @classmethod
+    def validate_time_control(cls, v: str) -> str:
+        if v not in TIME_CONTROLS:
+            raise ValueError('must contain valid time control')
+        return v
+
+    @field_validator('difficulty')
+    @classmethod
+    def validate_difficulty(cls, v: str) -> str:
+        if v not in DIFFICULTY:
+            raise ValueError('must contain valid difficulty')
+        return v
 
 class JoinRoom(BaseModel):
     room_id: str
