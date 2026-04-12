@@ -7,6 +7,7 @@ import random
 import string
 from fastapi_utils.tasks import repeat_every
 import asyncio
+from typing import Optional
 
 app = FastAPI()
 rooms_dict = {}
@@ -35,10 +36,20 @@ class Chess(BaseModel):
     against: str
     room_id: str
 
-class Room(BaseModel):
-    room_id: str
+class CreateRoom(BaseModel):
     time_control: str
     difficulty: str
+
+class JoinRoom(BaseModel):
+    room_id: str
+
+class Resign(BaseModel):
+    room_id: str
+    turn: bool
+class Draw(BaseModel):
+    room_id: str
+    turn: bool
+    accept: bool
 
 @app.post("/move")
 async def move(data: Chess):
@@ -106,7 +117,7 @@ async def move(data: Chess):
 
 
 @app.post("/create-room")
-async def create_room(data: Room):
+async def create_room(data: CreateRoom):
     game_time, increment = TIME_CONTROLS[data.time_control]
     room_id = get_random_string(6)
     rooms_dict[room_id] = {
@@ -116,11 +127,12 @@ async def create_room(data: Room):
         'b_timer': game_time,
         'increment': increment,
         'last_move_time': time.time(),
-        'difficulty': data.difficulty
+        'difficulty': data.difficulty,
+        'draw_offer': None
     }
     return room_id
 @app.post("/join-room")
-async def join_room(data: Room):
+async def join_room(data: JoinRoom):
     if data.room_id in rooms_dict:
         return {'joined': True, 'room_id': data.room_id}
     else:
@@ -144,3 +156,46 @@ def timer_decreasing():
                     to_delete.append(room_id)
         for room_id in to_delete:
                     del rooms_dict[room_id]
+@app.post("/board")
+async def board(data: JoinRoom):
+    try:
+        board = rooms_dict[data.room_id]['board']
+    except KeyError:
+        return {'success': False, 'status': 'room not found'}
+    status = game_status(board)
+    turn = which_side_move(board)
+    move_history = get_move_history(board)
+    w_time = rooms_dict[data.room_id]['w_timer']
+    b_time = rooms_dict[data.room_id]['b_timer']
+    return {
+        'current_FEN': board.fen(),
+        'w_timer': w_time,
+        'b_timer': b_time,
+        'status': status,
+        'turn': turn,
+        'move_history': move_history
+    }
+@app.post("/resign")
+async def resign(data: Resign):
+    if data.room_id not in rooms_dict:
+            return {'success': False, 'status': 'room not found'}
+
+    if data.turn == True:
+        return {'status': 'resigned', 'winner': False}
+    if data.turn == False:
+        return {'status': 'resigned', 'winner': True}
+
+@app.post("/draw")
+async def draw(data: Draw):
+    if data.room_id not in rooms_dict:
+            return {'success': False, 'status': 'room not found'}
+    if rooms_dict[data.room_id]['draw_offer'] is None:
+        draw_offer = data.turn
+        rooms_dict[data.room_id]['draw_offer'] = draw_offer
+        return {'status': 'draw_offered'}
+    else:
+        if data.accept == True:
+            return {'status': 'draw'}
+        else:
+            rooms_dict[data.room_id]['draw_offer'] = None
+            return {'status': 'draw_declined'}
