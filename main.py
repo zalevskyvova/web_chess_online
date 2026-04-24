@@ -21,7 +21,7 @@ TIME_CONTROLS = {
     "10+0": (600, 0),
     "15+10": (900, 0),
     "30+0": (1800, 0),
-    "unlim": (float('inf'), 0)
+    "unlim": (999999, 0)
 }
 DIFFICULTY = {
     "easy": 3,
