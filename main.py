@@ -1,6 +1,6 @@
 import chess, time
 from fastapi import FastAPI
-from pydantic import BaseModel,field_validator
+from pydantic import BaseModel, field_validator, model_validator
 import chess_logic
 from chess_logic import make_move, which_side_move, game_status, get_bot_move, get_random_string, get_move_history
 import random
@@ -8,6 +8,7 @@ import string
 from fastapi_utils.tasks import repeat_every
 import asyncio
 from typing import Optional
+
 
 app = FastAPI()
 rooms_dict = {}
@@ -43,8 +44,14 @@ class Chess(BaseModel):
 
 class CreateRoom(BaseModel):
     time_control: str
-    difficulty: str
+    difficulty: Optional[str] = None
     against: str
+
+    @model_validator(mode='after')
+    def check_agaist_who(self) -> 'CreateRoom':
+        if self.against == 'bot' and self.difficulty is None:
+            raise ValueError('Value error, must contain valid difficulty')
+        return self
 
     @field_validator('against')
     @classmethod
@@ -63,10 +70,11 @@ class CreateRoom(BaseModel):
     @field_validator('difficulty')
     @classmethod
     def validate_difficulty(cls, v: str) -> str:
+        if v is None:
+            return v
         if v not in DIFFICULTY:
             raise ValueError('must contain valid difficulty')
         return v
-
 class JoinRoom(BaseModel):
     room_id: str
 
