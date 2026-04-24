@@ -21,7 +21,7 @@ TIME_CONTROLS = {
     "10+0": (600, 0),
     "15+10": (900, 0),
     "30+0": (1800, 0),
-    "unlim": (float('inf'), 0)
+    "unlim": (999999, 0)
 }
 DIFFICULTY = {
     "easy": 3,
@@ -30,15 +30,28 @@ DIFFICULTY = {
     "unbeatable": 20
 }
 
+AGAINST = {
+    "bot": "bot",
+    "player": "player"
+
+}
+
 class Chess(BaseModel):
     move: str
     color: bool
-    against: str
     room_id: str
 
 class CreateRoom(BaseModel):
     time_control: str
     difficulty: str
+    against: str
+
+    @field_validator('against')
+    @classmethod
+    def validate_against_name(cls, v: str) -> str:
+        if v not in AGAINST:
+            raise ValueError('must contain valid against name')
+        return v
 
     @field_validator('time_control')
     @classmethod
@@ -73,7 +86,7 @@ async def move(data: Chess):
     except KeyError:
         return {'success': False, 'status': 'room not found'}
 
-    if data.against == 'bot':
+    if rooms_dict[data.room_id]['against'] == 'bot':
         success = make_move(board, data.move)
         status = game_status(board)
         turn = which_side_move(board)
@@ -142,7 +155,8 @@ async def create_room(data: CreateRoom):
         'increment': increment,
         'last_move_time': time.time(),
         'difficulty': data.difficulty,
-        'draw_offer': None
+        'draw_offer': None,
+        'against': data.against
     }
     return room_id
 @app.post("/join-room")
