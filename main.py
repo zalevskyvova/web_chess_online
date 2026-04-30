@@ -37,15 +37,40 @@ AGAINST = {
 
 }
 
+COLOR = {
+    "white": "white",
+    "black": "black",
+    "random": "random"
+}
+
 class Chess(BaseModel):
     move: str
     color: bool
     room_id: str
+class JoinRoom(BaseModel):
+    room_id: str
+
+class Resign(BaseModel):
+    room_id: str
+    turn: bool
+
+class Draw(BaseModel):
+    room_id: str
+    turn: bool
+    accept: bool
 
 class CreateRoom(BaseModel):
     time_control: str
     difficulty: Optional[str] = None
     against: str
+    color: str
+
+    @field_validator('color')
+    @classmethod
+    def validate_color(cls, v: str) -> str:
+        if v not in COLOR:
+            raise ValueError('must contain valid color or random')
+        return v
 
     @model_validator(mode='after')
     def check_agaist_who(self) -> 'CreateRoom':
@@ -75,16 +100,7 @@ class CreateRoom(BaseModel):
         if v not in DIFFICULTY:
             raise ValueError('must contain valid difficulty')
         return v
-class JoinRoom(BaseModel):
-    room_id: str
 
-class Resign(BaseModel):
-    room_id: str
-    turn: bool
-class Draw(BaseModel):
-    room_id: str
-    turn: bool
-    accept: bool
 
 @app.post("/move")
 async def move(data: Chess):
@@ -155,6 +171,10 @@ async def move(data: Chess):
 async def create_room(data: CreateRoom):
     game_time, increment = TIME_CONTROLS[data.time_control]
     room_id = get_random_string(6)
+    if data.color == "random":
+        color = random.choice(["white", "black"])
+    else:
+        color = data.color
     rooms_dict[room_id] = {
         'board': chess.Board(),
         'timer': data.time_control,
@@ -164,9 +184,10 @@ async def create_room(data: CreateRoom):
         'last_move_time': time.time(),
         'difficulty': data.difficulty,
         'draw_offer': None,
-        'against': data.against
+        'against': data.against,
+        'color': color
     }
-    return room_id
+    return {'room_id': room_id, 'color': color}
 @app.post("/join-room")
 async def join_room(data: JoinRoom):
     if data.room_id in rooms_dict:
