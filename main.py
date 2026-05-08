@@ -24,12 +24,7 @@ TIME_CONTROLS = {
     "30+0": (1800, 0),
     "unlim": (999999, 0)
 }
-DIFFICULTY = {
-    "easy": 3,
-    "medium": 8,
-    "hard": 12,
-    "unbeatable": 20
-}
+DIFFICULTY = chess_logic.DIFFICULTY
 
 AGAINST = {
     "bot": "bot",
@@ -124,10 +119,12 @@ async def move(data: Chess):
             rooms_dict[data.room_id]['w_timer'] += increment
 
 
-        if success and status == "playing":
-            depth = DIFFICULTY[rooms_dict[data.room_id]['difficulty']]
+        if success and status in ("playing", "check"):
+            diff = DIFFICULTY[rooms_dict[data.room_id]['difficulty']]
             await asyncio.sleep(5)
-            bot_move = get_bot_move(board, depth)
+            bot_move = get_bot_move(board, diff['engine_prob'], diff['depth'])
+            if bot_move is None:
+                return {'success': False, 'status': 'bot_error'}
             make_move(board, bot_move)
             rooms_dict[data.room_id]['last_move_time'] = time.time()
             status = game_status(board)
@@ -201,18 +198,22 @@ def timer_decreasing():
         to_delete = []
         for room_id in rooms_dict:
             board = rooms_dict[room_id]['board']
+            status = game_status(board)
             if board.move_stack != []:
                 turn = which_side_move(board)
-                if game_status(board) == "playing":
+                # Тікаємо таймер лише під час активної гри (включаючи шах)
+                if status in ("playing", "check"):
                     if turn == "White":
                         rooms_dict[room_id]['w_timer'] -= 1
-
                     else:
                         rooms_dict[room_id]['b_timer'] -= 1
-                if time.time() - rooms_dict[room_id]['last_move_time'] > 300:
-                    to_delete.append(room_id)
+            # Видаляємо кімнату: гра завершена АБО 5 хвилин без ходів
+            game_over = status in ("checkmate", "stalemate", "game end")
+            timed_out = time.time() - rooms_dict[room_id]['last_move_time'] > 300
+            if game_over or timed_out:
+                to_delete.append(room_id)
         for room_id in to_delete:
-                    del rooms_dict[room_id]
+            del rooms_dict[room_id]
 @app.post("/board")
 async def board(data: JoinRoom):
     try:
