@@ -336,6 +336,11 @@ async def create_room(data: CreateRoom, current_user: User = Depends(get_current
     # If playing against another player, difficulty isn't used. Default to easy if needed.
     diff = data.difficulty if data.difficulty else "easy"
     
+    # Resolve random color
+    final_color = data.color
+    if final_color == "random":
+        final_color = random.choice(["white", "black"])
+    
     rooms_dict[room_id] = {
         'board': chess.Board(),
         'timer': data.time_control,
@@ -346,10 +351,10 @@ async def create_room(data: CreateRoom, current_user: User = Depends(get_current
         'difficulty': diff,
         'draw_offer': None,
         'against': data.against,
-        'color': data.color,
+        'color': final_color,
         'owner': current_user.username
     }
-    return {'room_id': room_id, 'color': data.color}
+    return {'room_id': room_id, 'color': final_color}
 @app.post("/join-room")
 async def join_room(data: JoinRoom):
     if data.room_id in rooms_dict:
