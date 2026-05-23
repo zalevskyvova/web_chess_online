@@ -84,8 +84,9 @@ class Draw(BaseModel):
 
 class CreateRoom(BaseModel):
     time_control: str
-    difficulty: str
+    difficulty: Optional[str] = None
     against: str
+    color: str = "white"
 
     @field_validator('against')
     @classmethod
@@ -103,8 +104,8 @@ class CreateRoom(BaseModel):
 
     @field_validator('difficulty')
     @classmethod
-    def validate_difficulty(cls, v: str) -> str:
-        if v not in DIFFICULTY:
+    def validate_difficulty(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in DIFFICULTY:
             raise ValueError('must contain valid difficulty')
         return v
 
@@ -331,6 +332,10 @@ async def move(data: Chess, current_user: User = Depends(get_current_user)):
 async def create_room(data: CreateRoom, current_user: User = Depends(get_current_user)):
     game_time, increment = TIME_CONTROLS[data.time_control]
     room_id = get_random_string(6)
+    
+    # If playing against another player, difficulty isn't used. Default to easy if needed.
+    diff = data.difficulty if data.difficulty else "easy"
+    
     rooms_dict[room_id] = {
         'board': chess.Board(),
         'timer': data.time_control,
@@ -338,13 +343,13 @@ async def create_room(data: CreateRoom, current_user: User = Depends(get_current
         'b_timer': game_time,
         'increment': increment,
         'last_move_time': time.time(),
-        'difficulty': data.difficulty,
+        'difficulty': diff,
         'draw_offer': None,
         'against': data.against,
-        'color': color,
+        'color': data.color,
         'owner': current_user.username
     }
-    return {'room_id': room_id, 'color': color}
+    return {'room_id': room_id, 'color': data.color}
 @app.post("/join-room")
 async def join_room(data: JoinRoom):
     if data.room_id in rooms_dict:
