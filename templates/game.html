@@ -327,10 +327,10 @@
 
         // Override fetchBoard to also update labels
         const _origFetchBoard = fetchBoard;
-        async function fetchBoard() {
+        window.fetchBoard = async function() {
             await _origFetchBoard();
             updatePlayerLabels();
-        }
+        };
 
         function updatePlayerLabels() {
             if (!playerColor) return;

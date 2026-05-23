@@ -165,16 +165,16 @@
 
     // Show bot thinking animation
     const _origSendMove = sendMove;
-    async function sendMove(uci) {
+    window.sendMove = async function(uci) {
         const thinking = document.getElementById('botThinking');
         if (thinking) thinking.style.display = 'block';
         await _origSendMove(uci);
         if (thinking) thinking.style.display = 'none';
-    }
+    };
 
     // After room created, show difficulty label
     const _origCreateRoom = createRoom;
-    async function createRoom() {
+    window.createRoom = async function() {
         await _origCreateRoom();
         const diff = document.getElementById('difficulty').value;
         const labels = { easy:'😊 Легко', medium:'🙂 Середньо', hard:'😤 Складно', unbeatable:'😱 Непереможний' };
@@ -186,7 +186,7 @@
         // Update color label
         const pLabel = document.getElementById('playerColorLabel');
         if (pLabel && playerColor) pLabel.textContent = playerColor === 'white' ? '⬜ Білі' : '⬛ Чорні';
-    }
+    };
 </script>
 </body>
 </html>
