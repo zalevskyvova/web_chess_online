@@ -1,14 +1,364 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Гра з гравцем — Chess Online</title>
+    <meta name="description" content="Грайте у шахи з іншим гравцем в реальному часі на Chess Online">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
 <body>
 
+    <!-- NAV -->
+    <nav>
+        <a class="nav-logo" href="/">
+            <span>♛</span>
+            <h2>Chess Online</h2>
+        </a>
+        <div class="nav-right">
+            <a href="/" class="btn-nav">🏠 Головна</a>
+            <button class="btn-nav" onclick="Auth.logout()">Вийти</button>
+        </div>
+    </nav>
+
+    <!-- SETUP MODAL -->
+    <div class="modal-overlay" id="setupModal">
+        <div class="modal-card">
+            <div class="modal-title">♟ Гра з гравцем</div>
+            <div class="modal-subtitle">Створіть кімнату або приєднайтесь до друга</div>
+
+            <!-- Tabs -->
+            <div class="modal-tabs">
+                <button class="modal-tab active" id="tabCreate" onclick="switchTab('create')">🚀 Створити
+                    кімнату</button>
+                <button class="modal-tab" id="tabJoin" onclick="switchTab('join')">🔗 Приєднатись</button>
+            </div>
+
+            <!-- Create form -->
+            <form id="setupForm">
+                <div class="form-group">
+                    <label class="form-label">⏱ Контроль часу</label>
+                    <select id="timeControl" class="form-select">
+                        <option value="1+0">1+0 — Кулевий</option>
+                        <option value="1+1">1+1 — Кулевий з інкрементом</option>
+                        <option value="3+0">3+0 — Бліц</option>
+                        <option value="3+2" selected>3+2 — Бліц з інкрементом</option>
+                        <option value="5+0">5+0 — Бліц</option>
+                        <option value="10+0">10+0 — Рапід</option>
+                        <option value="15+10">15+10 — Рапід</option>
+                        <option value="30+0">30+0 — Класика</option>
+                        <option value="unlim">∞ — Без обмежень</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🎨 Ваш колір</label>
+                    <select id="colorSelect" class="form-select">
+                        <option value="random" selected>🎲 Випадковий</option>
+                        <option value="white">⬜ Білі</option>
+                        <option value="black">⬛ Чорні</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">🚀 Створити кімнату</button>
+            </form>
+
+            <!-- Join form -->
+            <form id="joinForm" style="display:none;" onsubmit="joinRoom(); return false;">
+                <div class="form-group">
+                    <label class="form-label">🔑 ID кімнати</label>
+                    <input type="text" id="joinRoomId" class="form-input" placeholder="Введіть 6-значний код"
+                        maxlength="6" autocomplete="off" spellcheck="false"
+                        style="text-transform:uppercase; letter-spacing:0.2em; font-size:20px; text-align:center;">
+                    <div id="joinError"
+                        style="display:none; margin-top:10px; color:#fca5a5; font-size:13px; text-align:center;">
+                        ⚠ Кімнату не знайдено. Перевірте ID.
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" id="joinBtn">🔗 Приєднатись</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- GAME AREA -->
+    <div id="gameArea">
+
+        <!-- Room ID display -->
+        <div id="roomInfoBox">
+            <span>🔗 Кімната: <strong id="roomInfo"></strong></span>
+            <button class="copy-btn" onclick="copyRoomId()">📋 Копіювати</button>
+            <span style="color: var(--text-muted); font-size:12px;">Дайте друзям цей ID</span>
+        </div>
+
+        <div class="game-layout">
+
+            <!-- Board column -->
+            <div class="board-wrapper">
+
+                <!-- Opponent (top) -->
+                <div class="player-panel" id="opponentPanel">
+                    <div class="player-info">
+                        <div class="player-avatar" id="opponentAvatar">?</div>
+                        <div>
+                            <div class="player-name" id="opponentName">Суперник</div>
+                            <div class="player-color" id="opponentColorLabel">очікування...</div>
+                        </div>
+                    </div>
+                    <div class="timer" id="timerBlack">--:--</div>
+                </div>
+
+                <!-- Chess board -->
+                <div id="chessboard"></div>
+
+                <!-- Player (bottom) -->
+                <div class="player-panel" id="playerPanel">
+                    <div class="player-info">
+                        <div class="player-avatar" id="playerAvatar">?</div>
+                        <div>
+                            <div class="player-name" id="playerName">Ви</div>
+                            <div class="player-color" id="playerColorLabel"></div>
+                        </div>
+                    </div>
+                    <div class="timer" id="timerWhite">--:--</div>
+                </div>
+
+            </div>
+
+            <!-- Side panel -->
+            <div class="side-panel">
+
+                <div class="side-card">
+                    <div class="side-card-title">📋 Ходи</div>
+                    <div id="moveList"></div>
+                </div>
+
+                <div class="side-card">
+                    <div class="side-card-title">⚙ Дії</div>
+                    <div class="action-buttons">
+                        <button class="btn-action btn-draw" onclick="handleDraw()">🤝 Запропонувати нічию</button>
+                        <button class="btn-action btn-resign" onclick="handleResign()">🏳 Здатися</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME OVER OVERLAY -->
+    <div id="gameOverOverlay">
+        <div class="game-over-card">
+            <span class="game-over-icon">♛</span>
+            <div class="game-over-title">Гра завершена</div>
+            <div id="gameOverMsg">—</div>
+            <div class="game-over-btns">
+                <button class="btn-go btn-go-primary" onclick="location.reload()">🔄 Нова гра</button>
+                <button class="btn-go btn-go-secondary" onclick="location.href='/'">🏠 Головна</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOASTS -->
+    <div id="toastContainer"></div>
+
+    <style>
+        /* Tab styles */
+        .modal-tabs {
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 24px;
+        }
+
+        .modal-tab {
+            flex: 1;
+            padding: 9px 12px;
+            border: none;
+            border-radius: 9px;
+            background: transparent;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-tab.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.2));
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .modal-tab:hover:not(.active) {
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        /* Join input */
+        .form-input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #e2e8f0;
+            font-size: 20px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: rgba(99, 102, 241, 0.6);
+            background: rgba(99, 102, 241, 0.06);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+        }
+
+        .form-input::placeholder {
+            color: #334155;
+            letter-spacing: 0.1em;
+            font-size: 15px;
+        }
+    </style>
+
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/game.js"></script>
+    <script>
+        // ── Tab switching ──
+        function switchTab(tab) {
+            const isCreate = tab === 'create';
+            document.getElementById('setupForm').style.display = isCreate ? 'block' : 'none';
+            document.getElementById('joinForm').style.display = isCreate ? 'none' : 'block';
+            document.getElementById('tabCreate').classList.toggle('active', isCreate);
+            document.getElementById('tabJoin').classList.toggle('active', !isCreate);
+            document.getElementById('joinError').style.display = 'none';
+            if (!isCreate) document.getElementById('joinRoomId').focus();
+        }
+
+        // ── Join existing room ──
+        async function joinRoom() {
+            const idInput = document.getElementById('joinRoomId');
+            const errEl = document.getElementById('joinError');
+            const btn = document.getElementById('joinBtn');
+            const id = idInput.value.trim().toUpperCase();
+
+            errEl.style.display = 'none';
+            if (id.length < 1) { idInput.focus(); return; }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Завантажуємо гру...';
+
+            try {
+                // Step 1: Join room
+                const joinData = await Auth.post('/join-room', { room_id: id });
+                if (!joinData.joined) {
+                    errEl.textContent = '⚠ Кімнату не знайдено. Перевірте ID.';
+                    errEl.style.display = 'block';
+                    idInput.value = '';
+                    idInput.focus();
+                    return;
+                }
+
+                // Step 2: Set state BEFORE showing game area
+                roomId = id;
+                const ownerColor = joinData.owner_color || 'white';
+                playerColor = ownerColor === 'white' ? 'black' : 'white';
+
+                // Step 3: Load board from server while modal is still visible
+                const boardData = await Auth.post('/board', { room_id: roomId });
+                if (boardData.success === false) {
+                    // Room disappeared between join and board fetch
+                    errEl.textContent = '⚠ Кімната недоступна. Спробуйте ще раз.';
+                    errEl.style.display = 'block';
+                    roomId = null;
+                    playerColor = null;
+                    return;
+                }
+                updateState(boardData);
+                await fetchLegalMoves();
+
+                // Step 4: Only NOW hide modal and show game - all data is ready
+                document.getElementById('setupModal').style.display = 'none';
+                document.getElementById('gameArea').style.display = 'flex';
+                document.getElementById('roomInfoBox').style.display = 'flex';
+                document.getElementById('roomInfo').textContent = roomId;
+
+                // Step 5: Render and start
+                updatePlayerLabels();
+                renderBoard();
+                renderTimers();
+                startPolling();
+                startTimerTick();
+
+            } catch (e) {
+                // Modal is still visible here, so error is shown correctly
+                errEl.textContent = "⚠ Помилка з'єднання. Спробуйте ще раз.";
+                errEl.style.display = 'block';
+                roomId = null;
+                playerColor = null;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔗 Приєднатись';
+            }
+        }
+
+        // Auto-uppercase the join input
+        document.getElementById('joinRoomId').addEventListener('input', function () {
+            this.value = this.value.toUpperCase();
+        });
+
+        // ── Helpers ──
+        function copyRoomId() {
+            const id = document.getElementById('roomInfo').textContent;
+            navigator.clipboard.writeText(id).then(() => showToast('ID скопійовано!', 'success'));
+        }
+
+        // Set player name from storage
+        const userRaw = localStorage.getItem('chess_user');
+        if (userRaw) {
+            const user = JSON.parse(userRaw);
+            document.getElementById('playerName').textContent = user.username;
+            document.getElementById('playerAvatar').textContent = user.username[0].toUpperCase();
+        }
+
+        // Override fetchBoard to also update labels
+        const _origFetchBoard = fetchBoard;
+        async function fetchBoard() {
+            await _origFetchBoard();
+            updatePlayerLabels();
+        }
+
+        function updatePlayerLabels() {
+            if (!playerColor) return;
+            const pLabel = document.getElementById('playerColorLabel');
+            const oLabel = document.getElementById('opponentColorLabel');
+
+            if (pLabel) pLabel.textContent = playerColor === 'white' ? '⬜ Білі' : '⬛ Чорні';
+
+            if (oLabel) {
+                if (window.hasGuest) {
+                    oLabel.textContent = playerColor === 'white' ? '⬛ Чорні (Приєднався ✓)' : '⬜ Білі (Приєднався ✓)';
+                } else {
+                    oLabel.textContent = playerColor === 'white' ? '⬛ Чорні (очікування...)' : '⬜ Білі (очікування...)';
+                }
+            }
+
+            // Swap timers only ONCE when player is black (flag prevents repeated DOM moves during polling)
+            if (playerColor === 'black' && !window._timersSwapped) {
+                window._timersSwapped = true;
+                const timerW = document.getElementById('timerWhite');
+                const timerB = document.getElementById('timerBlack');
+                const playerPanel   = document.getElementById('playerPanel');
+                const opponentPanel = document.getElementById('opponentPanel');
+                if (timerB && playerPanel)   playerPanel.appendChild(timerB);
+                if (timerW && opponentPanel) opponentPanel.appendChild(timerW);
+            }
+        }
+    </script>
 </body>
 
 </html>

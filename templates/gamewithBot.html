@@ -1,14 +1,192 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Гра з ботом — Chess Online</title>
+    <meta name="description" content="Грайте у шахи проти AI різної складності на Chess Online">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
-
 <body>
 
-</body>
+<!-- NAV -->
+<nav>
+    <a class="nav-logo" href="/">
+        <span>♛</span>
+        <h2>Chess Online</h2>
+    </a>
+    <div class="nav-right">
+        <a href="/" class="btn-nav">🏠 Головна</a>
+        <button class="btn-nav" onclick="Auth.logout()">Вийти</button>
+    </div>
+</nav>
 
+<!-- SETUP MODAL -->
+<div class="modal-overlay" id="setupModal">
+    <div class="modal-card">
+        <div class="modal-title">🤖 Гра з ботом</div>
+        <div class="modal-subtitle">Оберіть рівень складності та налаштуйте час</div>
+        <form id="setupForm">
+            <div class="form-group" id="difficultyRow">
+                <label class="form-label">🎯 Складність</label>
+                <select id="difficulty" class="form-select">
+                    <option value="easy">😊 Легко — початківець</option>
+                    <option value="medium" selected>🙂 Середньо — аматор</option>
+                    <option value="hard">😤 Складно — досвідчений</option>
+                    <option value="unbeatable">😱 Непереможний — майстер</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">⏱ Контроль часу</label>
+                <select id="timeControl" class="form-select">
+                    <option value="1+0">1+0 — Кулевий</option>
+                    <option value="3+0">3+0 — Бліц</option>
+                    <option value="5+0" selected>5+0 — Бліц</option>
+                    <option value="10+0">10+0 — Рапід</option>
+                    <option value="15+10">15+10 — Рапід</option>
+                    <option value="30+0">30+0 — Класика</option>
+                    <option value="unlim">∞ — Без обмежень</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🎨 Ваш колір</label>
+                <select id="colorSelect" class="form-select">
+                    <option value="random" selected>🎲 Випадковий</option>
+                    <option value="white">⬜ Білі</option>
+                    <option value="black">⬛ Чорні</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary">▶ Почати гру</button>
+        </form>
+    </div>
+</div>
+
+<!-- GAME AREA -->
+<div id="gameArea">
+    <div class="game-layout">
+
+        <!-- Board column -->
+        <div class="board-wrapper">
+
+            <!-- Bot (top) -->
+            <div class="player-panel" id="opponentPanel">
+                <div class="player-info">
+                    <div class="player-avatar" style="background: linear-gradient(135deg,#1e293b,#334155)">🤖</div>
+                    <div>
+                        <div class="player-name">Stockfish Bot</div>
+                        <div class="player-color" id="botLevel">AI</div>
+                    </div>
+                </div>
+                <div class="timer" id="timerBlack">--:--</div>
+            </div>
+
+            <!-- Chess board -->
+            <div id="chessboard"></div>
+
+            <!-- Player (bottom) -->
+            <div class="player-panel" id="playerPanel">
+                <div class="player-info">
+                    <div class="player-avatar" id="playerAvatar">?</div>
+                    <div>
+                        <div class="player-name" id="playerName">Ви</div>
+                        <div class="player-color" id="playerColorLabel"></div>
+                    </div>
+                </div>
+                <div class="timer" id="timerWhite">--:--</div>
+            </div>
+
+        </div>
+
+        <!-- Side panel -->
+        <div class="side-panel">
+
+            <div class="side-card">
+                <div class="side-card-title">🤖 Бот думає...</div>
+                <div id="botThinking" style="display:none; text-align:center; padding: 8px 0;">
+                    <div class="thinking-dots"><span>●</span><span>●</span><span>●</span></div>
+                </div>
+                <div id="difficultyDisplay" style="font-size:13px; color: var(--text-muted);"></div>
+            </div>
+
+            <div class="side-card">
+                <div class="side-card-title">📋 Ходи</div>
+                <div id="moveList"></div>
+            </div>
+
+            <div class="side-card">
+                <div class="side-card-title">⚙ Дії</div>
+                <div class="action-buttons">
+                    <button class="btn-action btn-resign" onclick="handleResign()">🏳 Здатися</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- GAME OVER OVERLAY -->
+<div id="gameOverOverlay">
+    <div class="game-over-card">
+        <span class="game-over-icon">🤖</span>
+        <div class="game-over-title">Гра завершена</div>
+        <div id="gameOverMsg">—</div>
+        <div class="game-over-btns">
+            <button class="btn-go btn-go-primary" onclick="location.reload()">🔄 Нова гра</button>
+            <button class="btn-go btn-go-secondary" onclick="location.href='/'">🏠 Головна</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOASTS -->
+<div id="toastContainer"></div>
+
+<style>
+.thinking-dots { display: flex; justify-content: center; gap: 6px; }
+.thinking-dots span {
+    font-size: 20px;
+    color: var(--accent);
+    animation: bounce 1.2s ease-in-out infinite;
+}
+.thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,80%,100% { transform: translateY(0); opacity:0.4; } 40% { transform: translateY(-8px); opacity:1; } }
+</style>
+
+<script src="/static/js/auth.js"></script>
+<script src="/static/js/game.js"></script>
+<script>
+    const userRaw = localStorage.getItem('chess_user');
+    if (userRaw) {
+        const user = JSON.parse(userRaw);
+        document.getElementById('playerName').textContent = user.username;
+        document.getElementById('playerAvatar').textContent = user.username[0].toUpperCase();
+    }
+
+    // Show bot thinking animation
+    const _origSendMove = sendMove;
+    async function sendMove(uci) {
+        const thinking = document.getElementById('botThinking');
+        if (thinking) thinking.style.display = 'block';
+        await _origSendMove(uci);
+        if (thinking) thinking.style.display = 'none';
+    }
+
+    // After room created, show difficulty label
+    const _origCreateRoom = createRoom;
+    async function createRoom() {
+        await _origCreateRoom();
+        const diff = document.getElementById('difficulty').value;
+        const labels = { easy:'😊 Легко', medium:'🙂 Середньо', hard:'😤 Складно', unbeatable:'😱 Непереможний' };
+        const el = document.getElementById('difficultyDisplay');
+        const lvl = document.getElementById('botLevel');
+        if (el) el.textContent = `Рівень: ${labels[diff] || diff}`;
+        if (lvl) lvl.textContent = labels[diff] || diff;
+
+        // Update color label
+        const pLabel = document.getElementById('playerColorLabel');
+        if (pLabel && playerColor) pLabel.textContent = playerColor === 'white' ? '⬜ Білі' : '⬛ Чорні';
+    }
+</script>
+</body>
 </html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вхід — Chess Online</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 20% 20%, rgba(99,102,241,0.15) 0%, transparent 60%),
+                        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(139,92,246,0.12) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+        .container { position: relative; z-index: 1; width: 100%; max-width: 420px; padding: 16px; }
+        .logo { text-align: center; margin-bottom: 32px; }
+        .logo-icon { font-size: 48px; display: block; margin-bottom: 8px;
+            filter: drop-shadow(0 0 20px rgba(99,102,241,0.6));
+            animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .logo h1 { font-size: 28px; font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .logo p { color: #64748b; font-size: 14px; margin-top: 4px; }
+        .card {
+            background: rgba(15,15,25,0.85); border: 1px solid rgba(99,102,241,0.2);
+            border-radius: 20px; padding: 36px; backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03) inset;
+        }
+        .card-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; color: #f1f5f9; }
+        .card-subtitle { color: #64748b; font-size: 14px; margin-bottom: 28px; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 13px; font-weight: 500; color: #94a3b8; margin-bottom: 8px; }
+        .input-wrap { position: relative; }
+        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            font-size: 16px; pointer-events: none; color: #475569; transition: color 0.2s; }
+        input {
+            width: 100%; padding: 12px 14px 12px 42px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; color: #e2e8f0; font-size: 15px; font-family: inherit; outline: none;
+            transition: all 0.2s;
+        }
+        input:focus {
+            border-color: rgba(99,102,241,0.6); background: rgba(99,102,241,0.06);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+        }
+        input::placeholder { color: #334155; }
+        .error-msg {
+            display: none; align-items: center; gap: 8px;
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #fca5a5; margin-bottom: 16px;
+        }
+        .error-msg.show { display: flex; }
+        .btn-primary {
+            width: 100%; padding: 13px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none; border-radius: 10px; color: white; font-size: 15px; font-weight: 600;
+            font-family: inherit; cursor: pointer; transition: all 0.2s; position: relative;
+            overflow: hidden; margin-top: 8px;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(99,102,241,0.4); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .spinner {
+            display: none; width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+            border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-primary.loading .btn-text { display: none; }
+        .btn-primary.loading .spinner { display: block; }
+        .divider {
+            text-align: center; color: #334155; font-size: 13px; margin: 20px 0; position: relative;
+        }
+        .divider::before, .divider::after {
+            content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: rgba(255,255,255,0.06);
+        }
+        .divider::before { left: 0; } .divider::after { right: 0; }
+        .register-link { text-align: center; font-size: 14px; color: #64748b; }
+        .register-link a { color: #818cf8; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+        .register-link a:hover { color: #c084fc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <span class="logo-icon">♛</span>
+            <h1>Chess Online</h1>
+            <p>Грай з друзями та ботами</p>
+        </div>
+        <div class="card">
+            <div class="card-title">Вхід</div>
+            <div class="card-subtitle">Введіть свої дані для входу</div>
+            <div class="error-msg" id="errorMsg">
+                <span>⚠</span><span id="errorText">Невірні дані</span>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Ім'я користувача</label>
+                    <div class="input-wrap">
+                        <input type="text" id="username" placeholder="Введіть username" autocomplete="username" required>
+                        <span class="input-icon">👤</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <div class="input-wrap">
+                        <input type="password" id="password" placeholder="Введіть пароль" autocomplete="current-password" required>
+                        <span class="input-icon">🔒</span>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" id="loginBtn">
+                    <span class="btn-text">Увійти</span>
+                    <div class="spinner"></div>
+                </button>
+            </form>
+            <div class="divider">або</div>
+            <div class="register-link">
+                Ще немає акаунту? <a href="/register">Зареєструватись</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        if (localStorage.getItem('chess_token')) window.location.href = '/';
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const errorText = document.getElementById('errorText');
+            btn.classList.add('loading'); btn.disabled = true;
+            errorMsg.classList.remove('show');
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            try {
+                const res = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    errorText.textContent = data.detail || 'Невірний логін або пароль';
+                    errorMsg.classList.add('show');
+                    return;
+                }
+                localStorage.setItem('chess_token', data.access_token);
+                localStorage.setItem('chess_user', JSON.stringify(data.user));
+                window.location.href = '/';
+            } catch (err) {
+                errorText.textContent = "Помилка з'єднання. Спробуйте ще раз.";
+                errorMsg.classList.add('show');
+            } finally {
+                btn.classList.remove('loading'); btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
