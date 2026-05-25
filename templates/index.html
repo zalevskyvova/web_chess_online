@@ -1,27 +1,178 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Online</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e2e8f0;
+            min-height: 100vh; display: flex; flex-direction: column; position: relative;
+        }
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        /* Nav */
+        nav {
+            position: relative; z-index: 10;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 32px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            background: rgba(10,10,15,0.8); backdrop-filter: blur(12px);
+        }
+        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .nav-logo span { font-size: 28px; filter: drop-shadow(0 0 10px rgba(99,102,241,0.5)); }
+        .nav-logo h2 { font-size: 18px; font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .nav-user { display: flex; align-items: center; gap: 12px; }
+        .user-pill {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25);
+            border-radius: 30px; padding: 6px 14px; font-size: 14px; font-weight: 500; color: #a5b4fc;
+        }
+        .user-avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;
+        }
+        .btn-logout {
+            background: transparent; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; color: #64748b; font-size: 13px; padding: 6px 14px;
+            cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        .btn-logout:hover { border-color: rgba(239,68,68,0.4); color: #fca5a5; background: rgba(239,68,68,0.05); }
+        .btn-login-nav {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none; border-radius: 8px; color: white; font-size: 13px; padding: 7px 16px;
+            cursor: pointer; font-family: inherit; font-weight: 600; text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-login-nav:hover { box-shadow: 0 4px 15px rgba(99,102,241,0.4); transform: translateY(-1px); }
+        /* Main content */
+        main {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 40px 16px; position: relative; z-index: 1;
+        }
+        .hero { text-align: center; margin-bottom: 48px; }
+        .hero-icon { font-size: 72px; display: block; margin-bottom: 16px;
+            filter: drop-shadow(0 0 30px rgba(99,102,241,0.5));
+            animation: float 4s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-12px) rotate(3deg); } }
+        .hero h1 { font-size: 42px; font-weight: 700; margin-bottom: 12px;
+            background: linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #c084fc 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero p { color: #64748b; font-size: 17px; max-width: 400px; margin: 0 auto; line-height: 1.6; }
+        /* Cards grid */
+        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 800px; width: 100%; }
+        @media (max-width: 600px) { .cards { grid-template-columns: 1fr; } .hero h1 { font-size: 30px; } }
+        .game-card {
+            background: rgba(15,15,25,0.7); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 18px; padding: 28px 24px; text-align: center;
+            transition: all 0.3s; cursor: pointer; text-decoration: none; color: inherit;
+            position: relative; overflow: hidden;
+        }
+        .game-card::before {
+            content: ''; position: absolute; inset: 0; border-radius: 18px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05));
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .game-card:hover { transform: translateY(-4px); border-color: rgba(99,102,241,0.3);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.1); }
+        .game-card:hover::before { opacity: 1; }
+        .card-icon { font-size: 40px; margin-bottom: 14px; display: block; }
+        .card-title { font-size: 17px; font-weight: 600; color: #f1f5f9; margin-bottom: 8px; }
+        .card-desc { font-size: 13px; color: #64748b; line-height: 1.5; }
+        .card-badge {
+            display: inline-block; margin-top: 12px;
+            background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.25);
+            border-radius: 20px; padding: 3px 12px; font-size: 12px; color: #a5b4fc;
+        }
+    </style>
+</head>
 <body>
-
-    <h2>chess online</h2>
-    <hr>
-    <a href="game.html">
-        <button>Play</button>
-    </a>
-    <br>
-    <br>
-    <a href="gamewithBot.html">
-        <button>Play with bot</button>
-    </a>
-    <div>
-        <br>
-        <a href="rulesofgame.html">
-            <button>Rules of the game</button>
+    <nav>
+        <a class="nav-logo" href="/">
+            <span>♛</span>
+            <h2>Chess Online</h2>
         </a>
-    </div>
+        <div class="nav-user" id="navUser">
+            <!-- filled by JS -->
+        </div>
+    </nav>
 
+    <main>
+        <div class="hero">
+            <span class="hero-icon">♞</span>
+            <h1>Chess Online</h1>
+            <p>Грай у шахи з друзями або тренуйся проти бота</p>
+        </div>
 
+        <div class="cards">
+            <a class="game-card" href="/game" id="btnPlay">
+                <span class="card-icon">👥</span>
+                <div class="card-title">Гра з гравцем</div>
+                <div class="card-desc">Зіграй проти іншого гравця в реальному часі</div>
+                <span class="card-badge">Мультиплеєр</span>
+            </a>
+            <a class="game-card" href="/game-bot" id="btnBot">
+                <span class="card-icon">🤖</span>
+                <div class="card-title">Гра з ботом</div>
+                <div class="card-desc">Тренуйся проти AI різних рівнів складності</div>
+                <span class="card-badge">Одиночна гра</span>
+            </a>
+            <a class="game-card" href="/rules" id="btnRules">
+                <span class="card-icon">📖</span>
+                <div class="card-title">Правила гри</div>
+                <div class="card-desc">Ознайомся з правилами та основами шахів</div>
+                <span class="card-badge">Навчання</span>
+            </a>
+        </div>
+    </main>
 
+    <script>
+        const navUser = document.getElementById('navUser');
+        const token = localStorage.getItem('chess_token');
+        const userRaw = localStorage.getItem('chess_user');
+
+        if (token && userRaw) {
+            const user = JSON.parse(userRaw);
+            const initial = user.username[0].toUpperCase();
+            navUser.innerHTML = `
+                <div class="user-pill">
+                    <div class="user-avatar">${initial}</div>
+                    ${user.username}
+                </div>
+                <button class="btn-logout" onclick="logout()">Вийти</button>
+            `;
+        } else {
+            navUser.innerHTML = `
+                <a href="/login" class="btn-login-nav">Увійти</a>
+            `;
+        }
+
+        function logout() {
+            fetch('/auth/logout', { method: 'POST' });
+            localStorage.removeItem('chess_token');
+            localStorage.removeItem('chess_user');
+            location.reload();
+        }
+
+        // Guard: redirect to login for game links if not authenticated
+        document.getElementById('btnPlay').addEventListener('click', function(e) {
+            if (!localStorage.getItem('chess_token')) {
+                e.preventDefault(); window.location.href = '/login';
+            }
+        });
+        document.getElementById('btnBot').addEventListener('click', function(e) {
+            if (!localStorage.getItem('chess_token')) {
+                e.preventDefault(); window.location.href = '/login';
+            }
+        });
+    </script>
 </body>
-
 </html>

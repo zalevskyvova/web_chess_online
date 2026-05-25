@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Правила гри — Chess Online</title>
+    <meta name="description" content="Дізнайтесь правила шахів — як ходять фігури, рокіровка, ен пасан та інші правила">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(99,102,241,0.1) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* NAV */
+        nav {
+            position: relative; z-index: 10;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 28px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            background: rgba(10,10,15,0.9); backdrop-filter: blur(12px);
+        }
+        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .nav-logo span { font-size: 26px; filter: drop-shadow(0 0 8px rgba(99,102,241,0.5)); }
+        .nav-logo h2 { font-size: 17px; font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .btn-nav {
+            background: transparent; border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px; color: #64748b; font-size: 13px; padding: 6px 14px;
+            cursor: pointer; font-family: inherit; text-decoration: none;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-nav:hover { border-color: rgba(99,102,241,0.4); color: #a5b4fc; }
+
+        /* CONTENT */
+        main {
+            position: relative; z-index: 1;
+            max-width: 860px; margin: 0 auto; padding: 48px 24px 80px;
+        }
+
+        .page-header { text-align: center; margin-bottom: 56px; }
+        .page-icon { font-size: 56px; display: block; margin-bottom: 14px;
+            filter: drop-shadow(0 0 20px rgba(99,102,241,0.5));
+            animation: float 4s ease-in-out infinite; }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        .page-title {
+            font-size: 38px; font-weight: 700; margin-bottom: 12px;
+            background: linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #c084fc 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .page-subtitle { color: #64748b; font-size: 16px; line-height: 1.6; max-width: 520px; margin: 0 auto; }
+
+        /* SECTIONS */
+        .section {
+            background: rgba(15,15,25,0.75);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 18px;
+            padding: 32px;
+            margin-bottom: 24px;
+            transition: border-color 0.3s;
+        }
+        .section:hover { border-color: rgba(99,102,241,0.2); }
+
+        .section-header {
+            display: flex; align-items: center; gap: 14px;
+            margin-bottom: 20px;
+        }
+        .section-icon {
+            font-size: 32px;
+            width: 52px; height: 52px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(99,102,241,0.1);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: 14px;
+            flex-shrink: 0;
+        }
+        .section-title { font-size: 20px; font-weight: 700; color: #f1f5f9; }
+        .section-desc { font-size: 13px; color: #64748b; margin-top: 3px; }
+
+        p { color: #94a3b8; font-size: 15px; line-height: 1.75; margin-bottom: 14px; }
+        p:last-child { margin-bottom: 0; }
+        strong { color: #c7d2fe; font-weight: 600; }
+
+        /* PIECE GRID */
+        .piece-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+            margin-top: 8px;
+        }
+        .piece-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .piece-card:hover { border-color: rgba(99,102,241,0.25); background: rgba(99,102,241,0.05); }
+        .piece-sym { font-size: 32px; flex-shrink: 0; line-height: 1; }
+        .piece-info-name { font-size: 14px; font-weight: 600; color: #e2e8f0; margin-bottom: 4px; }
+        .piece-info-move { font-size: 12px; color: #64748b; line-height: 1.5; }
+
+        /* RULES LIST */
+        .rules-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .rules-list li {
+            display: flex;
+            gap: 12px;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px;
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.6;
+            transition: border-color 0.2s;
+        }
+        .rules-list li:hover { border-color: rgba(99,102,241,0.2); }
+        .rules-list .rule-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+        /* CTA */
+        .cta-box {
+            text-align: center;
+            padding: 48px 32px;
+            background: rgba(99,102,241,0.06);
+            border: 1px solid rgba(99,102,241,0.15);
+            border-radius: 20px;
+            margin-top: 32px;
+        }
+        .cta-title { font-size: 24px; font-weight: 700; margin-bottom: 10px; color: #f1f5f9; }
+        .cta-desc { color: #64748b; font-size: 15px; margin-bottom: 24px; }
+        .cta-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+        .btn-cta {
+            padding: 12px 24px; border-radius: 10px;
+            font-size: 15px; font-weight: 600; font-family: inherit;
+            cursor: pointer; transition: all 0.2s; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-cta-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none; color: white;
+        }
+        .btn-cta-primary:hover { box-shadow: 0 8px 25px rgba(99,102,241,0.4); transform: translateY(-1px); }
+        .btn-cta-secondary {
+            background: transparent; color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-cta-secondary:hover { border-color: rgba(99,102,241,0.3); color: #a5b4fc; }
+
+        @media (max-width: 600px) {
+            .page-title { font-size: 28px; }
+            .section { padding: 22px; }
+            main { padding: 32px 16px 60px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a class="nav-logo" href="/">
+        <span>♛</span>
+        <h2>Chess Online</h2>
+    </a>
+    <a href="/" class="btn-nav">🏠 Головна</a>
+</nav>
+
+<main>
+    <div class="page-header">
+        <span class="page-icon">📖</span>
+        <h1 class="page-title">Правила шахів</h1>
+        <p class="page-subtitle">Все що потрібно знати, щоб почати грати у найінтелектуальнішу гру світу</p>
+    </div>
+
+    <!-- Мета гри -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">🎯</div>
+            <div>
+                <div class="section-title">Мета гри</div>
+                <div class="section-desc">Основна ціль</div>
+            </div>
+        </div>
+        <p>Шахи — гра для двох гравців на дошці 8×8. Один гравець керує <strong>білими</strong> фігурами, інший — <strong>чорними</strong>. Білі завжди ходять першими.</p>
+        <p>Мета гри — поставити <strong>шах і мат</strong> королю суперника. Це означає, що король знаходиться під ударом («шах»), і суперник не має жодного ходу, щоб вийти з-під удару.</p>
+    </div>
+
+    <!-- Фігури -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">♟</div>
+            <div>
+                <div class="section-title">Фігури та їх ходи</div>
+                <div class="section-desc">Як рухається кожна фігура</div>
+            </div>
+        </div>
+        <div class="piece-grid">
+            <div class="piece-card">
+                <span class="piece-sym">♔</span>
+                <div>
+                    <div class="piece-info-name">Король</div>
+                    <div class="piece-info-move">Ходить на одну клітинку у будь-якому напрямку. Найважливіша фігура.</div>
+                </div>
+            </div>
+            <div class="piece-card">
+                <span class="piece-sym">♕</span>
+                <div>
+                    <div class="piece-info-name">Ферзь</div>
+                    <div class="piece-info-move">Найсильніша фігура. Ходить на будь-яку кількість клітинок по прямій або по діагоналі.</div>
+                </div>
+            </div>
+            <div class="piece-card">
+                <span class="piece-sym">♖</span>
+                <div>
+                    <div class="piece-info-name">Тура</div>
+                    <div class="piece-info-move">Ходить на будь-яку кількість клітинок по горизонталі або вертикалі.</div>
+                </div>
+            </div>
+            <div class="piece-card">
+                <span class="piece-sym">♗</span>
+                <div>
+                    <div class="piece-info-name">Слон</div>
+                    <div class="piece-info-move">Ходить на будь-яку кількість клітинок по діагоналі. Завжди залишається на клітинках одного кольору.</div>
+                </div>
+            </div>
+            <div class="piece-card">
+                <span class="piece-sym">♘</span>
+                <div>
+                    <div class="piece-info-name">Кінь</div>
+                    <div class="piece-info-move">Ходить буквою «Г»: дві клітинки в одному напрямку і одна перпендикулярно. Може перестрибувати через інші фігури.</div>
+                </div>
+            </div>
+            <div class="piece-card">
+                <span class="piece-sym">♙</span>
+                <div>
+                    <div class="piece-info-name">Пішак</div>
+                    <div class="piece-info-move">Ходить вперед на одну клітинку (з початкової позиції — на дві). Б'є по діагоналі.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Спеціальні ходи -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">⚡</div>
+            <div>
+                <div class="section-title">Спеціальні ходи</div>
+                <div class="section-desc">Унікальні прийоми у шахах</div>
+            </div>
+        </div>
+        <ul class="rules-list">
+            <li>
+                <span class="rule-icon">🏰</span>
+                <div><strong>Рокіровка</strong> — особливий хід короля і тури. Якщо між ними немає фігур, і ні король, ні тура ще не ходили, король рухається на дві клітинки до тури, а тура переміщується на протилежний бік від короля.</div>
+            </li>
+            <li>
+                <span class="rule-icon">👻</span>
+                <div><strong>Взяття на проході (ен пасан)</strong> — якщо пішак суперника зробив хід на дві клітинки і опинився поруч з вашим пішаком, ваш пішак може взяти його «на прольоті», ніби той рухнув лише на одну клітинку. Цей хід доступний лише одразу після ходу суперника.</div>
+            </li>
+            <li>
+                <span class="rule-icon">👑</span>
+                <div><strong>Перетворення пішака</strong> — якщо пішак досягає останньої горизонталі (8-ї для білих, 1-ї для чорних), він перетворюється на будь-яку фігуру: ферзя, туру, слона або коня. Зазвичай гравці обирають ферзя.</div>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Закінчення гри -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">🏁</div>
+            <div>
+                <div class="section-title">Завершення гри</div>
+                <div class="section-desc">Як може закінчитись партія</div>
+            </div>
+        </div>
+        <ul class="rules-list">
+            <li>
+                <span class="rule-icon">♚</span>
+                <div><strong>Шах і мат</strong> — король під шахом і немає жодного легального ходу. Гравець, що поставив мат, перемагає.</div>
+            </li>
+            <li>
+                <span class="rule-icon">🤝</span>
+                <div><strong>Пат</strong> — гравець, чия черга ходити, не може зробити жодного легального ходу, але його король не під шахом. Рахується як нічия.</div>
+            </li>
+            <li>
+                <span class="rule-icon">⏱</span>
+                <div><strong>Час вийшов</strong> — у партіях із контролем часу, якщо у гравця закінчується час, він програє (за умови що суперник має достатньо матеріалу для мату).</div>
+            </li>
+            <li>
+                <span class="rule-icon">📋</span>
+                <div><strong>Нічия за угодою</strong> — обидва гравці можуть погодитись на нічию у будь-який момент партії.</div>
+            </li>
+            <li>
+                <span class="rule-icon">🔁</span>
+                <div><strong>Троєразове повторення позиції</strong> — якщо одна й та сама позиція виникає тричі, будь-який із гравців може заявити нічию.</div>
+            </li>
+            <li>
+                <span class="rule-icon">🏳</span>
+                <div><strong>Здача</strong> — гравець може в будь-який момент здатися, визнавши поразку.</div>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Поради для початківців -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">💡</div>
+            <div>
+                <div class="section-title">Поради для початківців</div>
+                <div class="section-desc">Основні стратегічні принципи</div>
+            </div>
+        </div>
+        <ul class="rules-list">
+            <li><span class="rule-icon">⚔️</span><div><strong>Контролюйте центр</strong> — намагайтесь розміщувати пішаки та фігури у центрі дошки (поля e4, e5, d4, d5).</div></li>
+            <li><span class="rule-icon">🚀</span><div><strong>Розвивайте фігури</strong> — на початку партії виводьте коней та слонів до активних позицій.</div></li>
+            <li><span class="rule-icon">🏰</span><div><strong>Рокіруйтесь своєчасно</strong> — рокіровка забезпечує безпеку вашому королю та активізує туру.</div></li>
+            <li><span class="rule-icon">👁️</span><div><strong>Думайте наперед</strong> — перед кожним ходом запитайте себе: чим відповість суперник? Розраховуйте варіанти на кілька ходів вперед.</div></li>
+            <li><span class="rule-icon">🎯</span><div><strong>Не жертвуйте фігурами дарма</strong> — кожна фігура має цінність. Ферзь найдорожчий, пішак найдешевший.</div></li>
+        </ul>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-box">
+        <div class="cta-title">Готові зіграти? ♟</div>
+        <div class="cta-desc">Застосуйте ці знання на практиці — зіграйте проти бота або запросіть друга!</div>
+        <div class="cta-buttons">
+            <a href="/game-bot" class="btn-cta btn-cta-primary">🤖 Грати проти бота</a>
+            <a href="/game" class="btn-cta btn-cta-secondary">👥 Грати з гравцем</a>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

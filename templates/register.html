@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Реєстрація — Chess Online</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e2e8f0;
+            min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative;
+        }
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 80% 20%, rgba(99,102,241,0.15) 0%, transparent 60%),
+                        radial-gradient(ellipse 60% 50% at 20% 80%, rgba(139,92,246,0.12) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        body::after {
+            content: ''; position: fixed; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 40px 40px; pointer-events: none;
+        }
+        .container { position: relative; z-index: 1; width: 100%; max-width: 460px; padding: 16px; }
+        .logo { text-align: center; margin-bottom: 28px; }
+        .logo-icon { font-size: 44px; display: block; margin-bottom: 8px;
+            filter: drop-shadow(0 0 20px rgba(99,102,241,0.6));
+            animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .logo h1 { font-size: 26px; font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .logo p { color: #64748b; font-size: 14px; margin-top: 4px; }
+        .card {
+            background: rgba(15,15,25,0.85); border: 1px solid rgba(99,102,241,0.2);
+            border-radius: 20px; padding: 32px; backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03) inset;
+        }
+        .card-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; color: #f1f5f9; }
+        .card-subtitle { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 13px; font-weight: 500; color: #94a3b8; margin-bottom: 7px; }
+        .input-wrap { position: relative; }
+        .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            font-size: 15px; pointer-events: none; color: #475569; }
+        input {
+            width: 100%; padding: 11px 12px 11px 38px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; color: #e2e8f0; font-size: 14px; font-family: inherit; outline: none;
+            transition: all 0.2s;
+        }
+        input:focus {
+            border-color: rgba(99,102,241,0.6); background: rgba(99,102,241,0.06);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+        }
+        input.field-error { border-color: rgba(239,68,68,0.5); }
+        input::placeholder { color: #334155; }
+        .field-hint { font-size: 12px; color: #475569; margin-top: 5px; }
+        .field-hint.error { color: #fca5a5; }
+        .error-msg {
+            display: none; align-items: center; gap: 8px;
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #fca5a5; margin-bottom: 16px;
+        }
+        .error-msg.show { display: flex; }
+        .success-msg {
+            display: none; align-items: center; gap: 8px;
+            background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #86efac; margin-bottom: 16px;
+        }
+        .success-msg.show { display: flex; }
+        .btn-primary {
+            width: 100%; padding: 13px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none; border-radius: 10px; color: white; font-size: 15px; font-weight: 600;
+            font-family: inherit; cursor: pointer; transition: all 0.2s; margin-top: 8px;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(99,102,241,0.4); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .spinner {
+            display: none; width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+            border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-primary.loading .btn-text { display: none; }
+        .btn-primary.loading .spinner { display: block; }
+        .login-link { text-align: center; font-size: 14px; color: #64748b; margin-top: 20px; }
+        .login-link a { color: #818cf8; text-decoration: none; font-weight: 500; }
+        .login-link a:hover { color: #c084fc; }
+        .strength-bar { height: 3px; border-radius: 2px; margin-top: 6px; transition: all 0.3s; background: #1e293b; overflow: hidden; }
+        .strength-fill { height: 100%; border-radius: 2px; transition: all 0.3s; width: 0%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <span class="logo-icon">♚</span>
+            <h1>Chess Online</h1>
+            <p>Створи свій акаунт</p>
+        </div>
+        <div class="card">
+            <div class="card-title">Реєстрація</div>
+            <div class="card-subtitle">Заповніть форму для створення акаунту</div>
+            <div class="error-msg" id="errorMsg"><span>⚠</span><span id="errorText"></span></div>
+            <div class="success-msg" id="successMsg"><span>✓</span><span>Акаунт створено! Перенаправляємо...</span></div>
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="username">Ім'я користувача</label>
+                    <div class="input-wrap">
+                        <input type="text" id="username" placeholder="Від 3 символів" autocomplete="username" required minlength="3" maxlength="30">
+                        <span class="input-icon">👤</span>
+                    </div>
+                    <div class="field-hint" id="usernameHint">Від 3 до 30 символів</div>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <div class="input-wrap">
+                        <input type="email" id="email" placeholder="your@email.com" autocomplete="email" required>
+                        <span class="input-icon">✉</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <div class="input-wrap">
+                        <input type="password" id="password" placeholder="Від 6 символів" autocomplete="new-password" required minlength="6" oninput="checkStrength(this.value)">
+                        <span class="input-icon">🔒</span>
+                    </div>
+                    <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+                    <div class="field-hint" id="strengthText">Введіть пароль</div>
+                </div>
+                <div class="form-group">
+                    <label for="password_confirm">Підтвердження пароля</label>
+                    <div class="input-wrap">
+                        <input type="password" id="password_confirm" placeholder="Повторіть пароль" autocomplete="new-password" required>
+                        <span class="input-icon">🔑</span>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" id="registerBtn">
+                    <span class="btn-text">Зареєструватись</span>
+                    <div class="spinner"></div>
+                </button>
+            </form>
+            <div class="login-link">
+                Вже маєш акаунт? <a href="/login">Увійти</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        if (localStorage.getItem('chess_token')) window.location.href = '/';
+
+        function checkStrength(pwd) {
+            const fill = document.getElementById('strengthFill');
+            const text = document.getElementById('strengthText');
+            if (!pwd) { fill.style.width='0%'; fill.style.background=''; text.textContent='Введіть пароль'; return; }
+            let score = 0;
+            if (pwd.length >= 6) score++;
+            if (pwd.length >= 10) score++;
+            if (/[A-Z]/.test(pwd)) score++;
+            if (/[0-9]/.test(pwd)) score++;
+            if (/[^A-Za-z0-9]/.test(pwd)) score++;
+            const configs = [
+                { pct: '20%', color: '#ef4444', label: 'Дуже слабкий' },
+                { pct: '40%', color: '#f97316', label: 'Слабкий' },
+                { pct: '60%', color: '#eab308', label: 'Середній' },
+                { pct: '80%', color: '#22c55e', label: 'Сильний' },
+                { pct: '100%', color: '#6366f1', label: 'Дуже сильний' }
+            ];
+            const c = configs[Math.min(score - 1, 4)];
+            fill.style.width = c.pct; fill.style.background = c.color; text.textContent = c.label;
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const btn = document.getElementById('registerBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const errorText = document.getElementById('errorText');
+            const successMsg = document.getElementById('successMsg');
+
+            errorMsg.classList.remove('show');
+            successMsg.classList.remove('show');
+
+            const password = document.getElementById('password').value;
+            const password_confirm = document.getElementById('password_confirm').value;
+            if (password !== password_confirm) {
+                errorText.textContent = 'Паролі не співпадають';
+                errorMsg.classList.add('show'); return;
+            }
+
+            btn.classList.add('loading'); btn.disabled = true;
+            const body = {
+                username: document.getElementById('username').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                password, password_confirm
+            };
+            try {
+                const res = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    errorText.textContent = data.detail || 'Помилка реєстрації';
+                    errorMsg.classList.add('show'); return;
+                }
+                localStorage.setItem('chess_token', data.access_token);
+                localStorage.setItem('chess_user', JSON.stringify(data.user));
+                successMsg.classList.add('show');
+                setTimeout(() => window.location.href = '/', 1200);
+            } catch (err) {
+                errorText.textContent = "Помилка з'єднання. Спробуйте ще раз.";
+                errorMsg.classList.add('show');
+            } finally {
+                btn.classList.remove('loading'); btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
