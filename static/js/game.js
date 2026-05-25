@@ -9,8 +9,8 @@ const PIECES = {
     'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟',
 };
 
-const SQUARE_LIGHT = '#f0d9b5';
-const SQUARE_DARK  = '#b58863';
+const SQUARE_LIGHT = '#b8bcbe';
+const SQUARE_DARK  = '#4e5254';
 const SELECTED_COLOR  = 'rgba(20,85,30,0.5)';
 const LAST_MOVE_COLOR = 'rgba(155,199,0,0.4)';
 const CHECK_COLOR     = 'rgba(220,30,30,0.55)';
@@ -200,10 +200,16 @@ function renderBoard() {
             // Piece
             const piece = pieceMap[sq];
             if (piece) {
-                const span = document.createElement('span');
-                span.className = 'piece';
-                span.textContent = PIECES[piece];
-                cell.appendChild(span);
+                const img = document.createElement('img');
+                img.className = 'piece-img';
+                
+                // Map piece code to file name
+                let colorPrefix = piece === piece.toUpperCase() ? 'w' : 'b';
+                let pieceType = piece.toUpperCase();
+                img.src = `/static/images/pieces/${colorPrefix}${pieceType}.png`;
+                img.alt = piece;
+                img.draggable = false;
+                cell.appendChild(img);
             }
 
             // Legal move dot
@@ -216,14 +222,14 @@ function renderBoard() {
             // Rank label (left edge)
             if (fi === 0) {
                 const lbl = document.createElement('span');
-                lbl.className = 'coord-rank';
+                lbl.className = 'coord-rank ' + (isLight ? 'coord-on-light' : 'coord-on-dark');
                 lbl.textContent = rank;
                 cell.appendChild(lbl);
             }
             // File label (bottom edge)
             if (ri === 7) {
                 const lbl = document.createElement('span');
-                lbl.className = 'coord-file';
+                lbl.className = 'coord-file ' + (isLight ? 'coord-on-light' : 'coord-on-dark');
                 lbl.textContent = file;
                 cell.appendChild(lbl);
             }
