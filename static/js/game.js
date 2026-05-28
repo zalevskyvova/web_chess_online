@@ -4,13 +4,13 @@
  */
 
 // ─── Constants ───────────────────────────────────────────────
-const PIECES = {
-    'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
-    'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟',
+const PIECE_IMAGES = {
+    'K': 'w_k.png', 'Q': 'w_q.png', 'R': 'w_r.png', 'B': 'w_b.png', 'N': 'w_n.png', 'P': 'w_p.png',
+    'k': 'b_k.png', 'q': 'b_q.png', 'r': 'b_r.png', 'b': 'b_b.png', 'n': 'b_n.png', 'p': 'b_p.png',
 };
 
-const SQUARE_LIGHT = '#b8bcbe';
-const SQUARE_DARK  = '#4e5254';
+const SQUARE_LIGHT = '#b0b0b0';
+const SQUARE_DARK  = '#5c5c5c';
 const SELECTED_COLOR  = 'rgba(20,85,30,0.5)';
 const LAST_MOVE_COLOR = 'rgba(155,199,0,0.4)';
 const CHECK_COLOR     = 'rgba(220,30,30,0.55)';
@@ -201,12 +201,8 @@ function renderBoard() {
             const piece = pieceMap[sq];
             if (piece) {
                 const img = document.createElement('img');
-                img.className = 'piece-img';
-                
-                // Map piece code to file name
-                let colorPrefix = piece === piece.toUpperCase() ? 'w' : 'b';
-                let pieceType = piece.toUpperCase();
-                img.src = `/static/images/pieces/${colorPrefix}${pieceType}.png`;
+                img.className = 'piece';
+                img.src = `/static/pieces/${PIECE_IMAGES[piece]}`;
                 img.alt = piece;
                 img.draggable = false;
                 cell.appendChild(img);
@@ -222,14 +218,14 @@ function renderBoard() {
             // Rank label (left edge)
             if (fi === 0) {
                 const lbl = document.createElement('span');
-                lbl.className = 'coord-rank ' + (isLight ? 'coord-on-light' : 'coord-on-dark');
+                lbl.className = 'coord-rank';
                 lbl.textContent = rank;
                 cell.appendChild(lbl);
             }
             // File label (bottom edge)
             if (ri === 7) {
                 const lbl = document.createElement('span');
-                lbl.className = 'coord-file ' + (isLight ? 'coord-on-light' : 'coord-on-dark');
+                lbl.className = 'coord-file';
                 lbl.textContent = file;
                 cell.appendChild(lbl);
             }

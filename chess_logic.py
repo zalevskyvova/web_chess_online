@@ -35,14 +35,25 @@ def which_side_move(board):
         return "White"
     else:
         return "Black"
-def get_bot_move(board,depth):
+def get_bot_move(board, depth):
     try:
         current_fen = board.fen()
-        response = requests.get(f"https://lichess.org/api/cloud-eval?fen={current_fen}&depth={depth}")
-        moves = response.json()['pvs'][0]['moves']
-        return moves.split()[0]
-    except requests.exceptions.RequestException:
-        return None
+        response = requests.get(f"https://stockfish.online/api/s/v2.php?fen={current_fen}&depth={depth}", timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and 'bestmove' in data:
+                # 'bestmove' format: "bestmove e2e4 ponder c7c5"
+                parts = data['bestmove'].split()
+                if len(parts) >= 2:
+                    return parts[1]
+    except Exception:
+        pass
+        
+    # Якщо API не відповіло або повернуло помилку, беремо будь-який доступний легальний хід
+    legal_moves = list(board.legal_moves)
+    if legal_moves:
+        return random.choice(legal_moves).uci()
+    return None
 def get_random_string(length):
         # Choose characters from: lowercase, uppercase, and digits
         characters = string.ascii_letters + string.digits

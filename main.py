@@ -281,7 +281,7 @@ async def move(data: Chess, current_user: User = Depends(get_current_user)):
         if success and status in ("playing", "check"):
             diff = DIFFICULTY[rooms_dict[data.room_id]['difficulty']]
             await asyncio.sleep(0.5)
-            bot_move = get_bot_move(board, diff['engine_prob'], diff['depth'])
+            bot_move = get_bot_move(board, diff)
             if bot_move is None:
                 return {'success': False, 'status': 'bot_error'}
             make_move(board, bot_move)
@@ -293,6 +293,7 @@ async def move(data: Chess, current_user: User = Depends(get_current_user)):
                 'success': bot_move,
                 'status': status,
                 'turn': turn,
+                'current_FEN': board.fen(),
                 'w_timer': rooms_dict[data.room_id]['w_timer'],
                 'b_timer': rooms_dict[data.room_id]['b_timer'],
                 'move_history': move_history
@@ -301,6 +302,7 @@ async def move(data: Chess, current_user: User = Depends(get_current_user)):
             'success': success,
             'status': status,
             'turn': turn,
+            'current_FEN': board.fen(),
             'w_timer': rooms_dict[data.room_id]['w_timer'],
             'b_timer': rooms_dict[data.room_id]['b_timer'],
             'move_history': move_history
@@ -322,6 +324,7 @@ async def move(data: Chess, current_user: User = Depends(get_current_user)):
             'success': success,
             'status': status,
             'turn': turn,
+            'current_FEN': board.fen(),
             'w_timer': rooms_dict[data.room_id]['w_timer'],
             'b_timer': rooms_dict[data.room_id]['b_timer'],
             'move_history': move_history
@@ -341,8 +344,14 @@ async def create_room(data: CreateRoom, current_user: User = Depends(get_current
     if final_color == "random":
         final_color = random.choice(["white", "black"])
     
+    board = chess.Board()
+    if data.against == "bot" and final_color == "black":
+        bot_move = get_bot_move(board, DIFFICULTY[diff])
+        if bot_move:
+            make_move(board, bot_move)
+
     rooms_dict[room_id] = {
-        'board': chess.Board(),
+        'board': board,
         'timer': data.time_control,
         'w_timer': game_time,
         'b_timer': game_time,

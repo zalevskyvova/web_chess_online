@@ -295,10 +295,12 @@ select option { background: #1a1a2e; }
 .sq:hover .piece-img { transform: scale(1.08); }
 
 .piece {
-    font-size: clamp(26px, 5.5vw, 50px);
-    line-height: 1;
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
     user-select: none;
-    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
+    pointer-events: none;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
     transition: transform 0.1s;
     z-index: 2;
 }
